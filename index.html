@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Phone Bat Cricket</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏏</text></svg>" />
+  </head>
+  <body>
+    <div id="stage" class="stage"></div>
+
+    <div class="hud">
+      <section class="card pairing" id="pairing">
+        <header>
+          <h1>Phone Bat Cricket</h1>
+          <p id="game-status" class="status">Starting…</p>
+        </header>
+        <div id="pair-body" class="pair-body">
+          <canvas id="qr" width="220" height="220" aria-label="QR code that opens the bat controller on your phone"></canvas>
+          <div class="pair-text">
+            <p>Scan with your phone's camera. The phone and this computer need to be on the same Wi-Fi.</p>
+            <p class="muted">The first time, the phone warns about the certificate. It's this dev server's own certificate: continue to the site.</p>
+            <label id="host-field" class="field" hidden>
+              Address for the phone
+              <select id="host"></select>
+            </label>
+            <a id="controller-link" class="link" target="_blank" rel="noopener"></a>
+          </div>
+        </div>
+        <button id="pair-toggle" class="ghost" type="button" hidden>Pair another phone</button>
+      </section>
+
+      <section class="card stats" id="stats" hidden>
+        <h2>Link</h2>
+        <dl>
+          <dt>Motion from</dt><dd id="s-source">–</dd>
+          <dt>Samples</dt><dd id="s-rate">–</dd>
+          <dt>Latency (one way)</dt><dd id="s-latency">–</dd>
+          <dt>Round trip</dt><dd id="s-rtt">–</dd>
+          <dt>Longest gap, last 1 s</dt><dd id="s-gap">–</dd>
+          <dt>Lost / late</dt><dd id="s-lost">–</dd>
+        </dl>
+        <h2>Swing</h2>
+        <dl>
+          <dt>Spin</dt><dd id="s-spin">–</dd>
+          <dt>Toe speed</dt><dd id="s-toe">–</dd>
+          <dt>Last swing</dt><dd id="s-last">–</dd>
+          <dt>Best swing</dt><dd id="s-best">–</dd>
+        </dl>
+      </section>
+
+      <!-- Broadcast-style score bug -->
+      <section class="score-bug" aria-live="polite">
+        <div class="bug-team">YOU</div>
+        <div class="bug-score" id="sb-score">0/0</div>
+        <div class="bug-overs"><span id="sb-overs">0.0</span><small id="sb-overs-total"> / 2 OV</small></div>
+        <div class="bug-over" id="sb-over"></div>
+        <div class="bug-speed" id="sb-speed" hidden>
+          <small>SPEED</small>
+          <b id="sb-speed-value"></b>
+          <small>KM/H</small>
+        </div>
+      </section>
+
+      <div class="banner" id="banner" hidden aria-live="assertive">
+        <div class="banner-slab"><div id="banner-main"></div></div>
+        <div id="banner-sub"></div>
+      </div>
+
+      <p class="ball-info" id="delivery"></p>
+
+      <button class="controls-show" id="ctl-show" type="button" hidden>Controls <kbd>M</kbd></button>
+      <section class="controls" id="controls" aria-label="Game controls">
+        <header class="ctl-head">
+          <h2>Controls</h2>
+          <button class="ctl-hide" id="ctl-hide" type="button">Hide <kbd>M</kbd></button>
+        </header>
+
+        <div class="ctl-row">
+          <button type="button" class="ctl ctl-primary" id="ctl-calibrate">Calibrate <kbd>C</kbd></button>
+          <button type="button" class="ctl ctl-switch" id="ctl-pause" aria-pressed="false">
+            <span class="ctl-label">Pause</span><span class="ctl-state"></span><kbd>P</kbd>
+          </button>
+          <button type="button" class="ctl" id="ctl-new">New innings <kbd>R</kbd></button>
+        </div>
+
+        <div class="ctl-group">
+          <span class="ctl-group-label">Difficulty <kbd>E</kbd><kbd>I</kbd><kbd>H</kbd></span>
+          <div class="segmented" id="ctl-difficulty" role="group" aria-label="Difficulty">
+            <button type="button" data-value="easy">Easy</button>
+            <button type="button" data-value="intermediate">Intermediate</button>
+            <button type="button" data-value="hard">Hard</button>
+          </div>
+          <p class="ctl-note" id="ctl-difficulty-note"></p>
+        </div>
+
+        <div class="ctl-group">
+          <span class="ctl-group-label">Bowling pace <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span>
+          <div class="segmented" id="ctl-pace" role="group" aria-label="Bowling pace">
+            <button type="button" data-value="slow">Slow</button>
+            <button type="button" data-value="medium">Medium</button>
+            <button type="button" data-value="fast">Fast</button>
+          </div>
+        </div>
+
+        <div class="ctl-group">
+          <span class="ctl-group-label">Camera <kbd>V</kbd></span>
+          <div class="segmented" id="ctl-view" role="group" aria-label="Camera">
+            <button type="button" data-value="0">Behind</button>
+            <button type="button" data-value="1">Side-on</button>
+            <button type="button" data-value="2">Front</button>
+          </div>
+        </div>
+
+        <div class="ctl-row">
+          <button type="button" class="ctl ctl-switch" id="ctl-sound" aria-pressed="false" data-sound-switch>
+            <span class="ctl-label">Sound</span><span class="ctl-state"></span>
+          </button>
+          <button type="button" class="ctl ctl-switch" id="ctl-stats" aria-pressed="false">
+            <span class="ctl-label">Stats</span><span class="ctl-state"></span><kbd>S</kbd>
+          </button>
+          <button type="button" class="ctl ctl-switch" id="ctl-debug" aria-pressed="false">
+            <span class="ctl-label">Debug</span><span class="ctl-state"></span><kbd>D</kbd>
+          </button>
+        </div>
+      </section>
+
+      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    </div>
+
+    <script type="module" src="/src/game/main.ts"></script>
+  </body>
+</html>
